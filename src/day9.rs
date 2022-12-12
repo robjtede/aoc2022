@@ -15,7 +15,7 @@ fn distance((hx, hy): (i64, i64), (tx, ty): (i64, i64)) -> f64 {
     (((hx - tx) as f64).abs().powi(2) + ((hy - ty) as f64).abs().powi(2)).sqrt()
 }
 
-/// Returns 1 if `b` is true, otherwise returns 2.
+/// Returns 1 if `b` is true, otherwise returns -1.
 fn bool_to_int(b: bool) -> i64 {
     b as u8 as i64 * 2 - 1
 }
