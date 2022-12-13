@@ -4,11 +4,11 @@ static INPUT: &str = include_str!(concat!("./", module_path!(), "_input.txt"));
 static INPUT_TEST: &str = include_str!(concat!("./", module_path!(), "_test.txt"));
 
 fn distinct_n_until(line: &str, n: usize) -> usize {
-    line.as_bytes()
+    n + line
+        .as_bytes()
         .windows(n)
-        .take_while(|&slice| HashSet::<&u8>::from_iter(slice).len() != n)
+        .take_while(|&window| HashSet::<&u8>::from_iter(window).len() < n)
         .count()
-        + n
 }
 
 fn main() {
