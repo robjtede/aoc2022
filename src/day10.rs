@@ -5,7 +5,7 @@ static INPUT_TEST: &str = include_str!(concat!("./", module_path!(), "_test.txt"
 static INPUT_TEST_LARGE: &str = include_str!(concat!("./", module_path!(), "_test_large.txt"));
 
 fn main() {
-    let input = match std::env::args().nth(2) {
+    let input = match std::env::args().nth(1) {
         Some(flag) if flag == "--test" => INPUT_TEST,
         Some(flag) if flag == "--test-large" => INPUT_TEST_LARGE,
         _ => INPUT,
