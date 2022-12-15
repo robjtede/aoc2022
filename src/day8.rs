@@ -111,40 +111,34 @@ fn scenic_score(forest: &DMatrix<char>, x: usize, y: usize) -> usize {
 
     let l = forest.row(y);
     let l = l.iter().take(x).rev();
-    let l = fold_view2(height, l);
+    let l = count_visible_trees(height, l);
 
     let r = forest.row(y);
     let r = r.iter().skip(x + 1);
-    let r = fold_view2(height, r);
+    let r = count_visible_trees(height, r);
 
     let d = forest.column(x);
     let d = d.iter().skip(y + 1);
-    let d = fold_view2(height, d);
+    let d = count_visible_trees(height, d);
 
     let u = forest.column(x);
     let u = u.iter().take(y).rev();
-    let u = fold_view2(height, u);
+    let u = count_visible_trees(height, u);
 
     // println!("u={u}, l={l}, r={r}, d={d}");
 
     r * l * u * d
 }
 
-fn fold_view2<'a>(height: char, trees: impl Iterator<Item = &'a char>) -> usize {
+fn count_visible_trees<'a>(height: char, trees: impl Iterator<Item = &'a char>) -> usize {
+    let mut count = 0;
+
     trees
-        .fold((0, false), |(l, blocked), tree| {
-            if blocked {
-                // view already blocked
-                (l, true)
-            } else if *tree >= height {
-                // same height or higher tree, view beyond blocked
-                (l + 1, true)
-            } else {
-                // lower tree, continue looking
-                (l + 1, false)
-            }
-        })
-        .0
+        .inspect(|_| count += 1)
+        .take_while(|tree| **tree < height)
+        .count();
+
+    count
 }
 
 // from https://stackoverflow.com/a/64499219/1743162
