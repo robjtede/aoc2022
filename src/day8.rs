@@ -1,5 +1,7 @@
 use std::collections::BTreeSet;
 
+use nalgebra::DMatrix;
+
 static INPUT: &str = include_str!(concat!("./", module_path!(), "_input.txt"));
 static INPUT_TEST: &str = include_str!(concat!("./", module_path!(), "_test.txt"));
 
@@ -17,8 +19,6 @@ fn main() {
     }
 
     let forest_tb = transpose(forest_lr.clone());
-
-    // print_forest(&forest);
 
     // problem A
 
@@ -75,8 +75,76 @@ fn main() {
     println!("solution A = {}", visible.len());
 
     // problem B
-    let solution_b = "TODO";
+
+    let width = input.split_once('\n').unwrap().0.len();
+    let height = input.lines().count();
+
+    println!();
+    println!("width={width} height={height}");
+
+    let grid = input
+        .lines()
+        .flat_map(|row| row.chars())
+        .collect::<Vec<_>>();
+
+    let forest = DMatrix::from_row_slice(height, width, &grid);
+
+    let mut best_scenic_score = ((0, 0), 0);
+
+    for (y, row) in forest.row_iter().enumerate() {
+        for (x, _) in row.iter().enumerate() {
+            let ss = scenic_score(&forest, x, y);
+
+            if ss > best_scenic_score.1 {
+                best_scenic_score = ((x, y), ss);
+            }
+        }
+    }
+
+    let ((x, y), solution_b) = best_scenic_score;
+    println!("best scenic score at {x},{y}");
     println!("solution B = {solution_b}");
+}
+
+fn scenic_score(forest: &DMatrix<char>, x: usize, y: usize) -> usize {
+    let height = *forest.get((y, x)).unwrap();
+
+    let l = forest.row(y);
+    let l = l.iter().take(x).rev();
+    let l = fold_view2(height, l);
+
+    let r = forest.row(y);
+    let r = r.iter().skip(x + 1);
+    let r = fold_view2(height, r);
+
+    let d = forest.column(x);
+    let d = d.iter().skip(y + 1);
+    let d = fold_view2(height, d);
+
+    let u = forest.column(x);
+    let u = u.iter().take(y).rev();
+    let u = fold_view2(height, u);
+
+    // println!("u={u}, l={l}, r={r}, d={d}");
+
+    r * l * u * d
+}
+
+fn fold_view2<'a>(height: char, trees: impl Iterator<Item = &'a char>) -> usize {
+    trees
+        .fold((0, false), |(l, blocked), tree| {
+            if blocked {
+                // view already blocked
+                (l, true)
+            } else if *tree >= height {
+                // same height or higher tree, view beyond blocked
+                (l + 1, true)
+            } else {
+                // lower tree, continue looking
+                (l + 1, false)
+            }
+        })
+        .0
 }
 
 // from https://stackoverflow.com/a/64499219/1743162
