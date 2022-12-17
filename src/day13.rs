@@ -1,11 +1,13 @@
 use std::{cmp, collections::BTreeSet};
 
 use itertools::{EitherOrBoth, Itertools as _};
+use serde::Deserialize;
 
 static INPUT: &str = include_str!(concat!("./", module_path!(), "_input.txt"));
 static INPUT_TEST: &str = include_str!(concat!("./", module_path!(), "_test.txt"));
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(untagged)]
 enum Item {
     Single(u64),
     List(Vec<Item>),
@@ -67,43 +69,6 @@ impl Ord for Item {
     }
 }
 
-fn parse_list(line: &str) -> Vec<Item> {
-    if line.trim().is_empty() {
-        return Vec::new();
-    }
-
-    let csv = &line[1..line.len() - 1];
-    let mut items = Vec::new();
-    let mut part = String::new();
-    let mut level = 0;
-
-    for c in csv.chars() {
-        match c {
-            '[' => level += 1,
-            ']' => level -= 1,
-            ',' if level == 0 => {
-                match part.parse::<u64>() {
-                    Ok(num) => items.push(Item::Single(num)),
-                    Err(_) => items.push(Item::List(parse_list(&part))),
-                };
-
-                part.clear();
-                continue;
-            }
-            _ => {}
-        }
-
-        part.push(c);
-    }
-
-    match part.parse::<u64>() {
-        Ok(num) => items.push(Item::Single(num)),
-        Err(_) => items.push(Item::List(parse_list(&part))),
-    };
-
-    items
-}
-
 fn is_divider_packet(packet: &[Item], n: u64) -> bool {
     if packet.len() != 1 {
         return false;
@@ -159,7 +124,8 @@ fn main() {
         .lines()
         .chain(["[[2]]", "[[6]]"].into_iter())
         .filter(|line| !line.is_empty())
-        .map(parse_list)
+        // lines look like JSON arrays so parsing is simple
+        .map(|line| serde_json::from_str::<Vec<Item>>(line).unwrap())
         .collect::<BTreeSet<_>>();
 
     let mut two = 0;
@@ -182,4 +148,43 @@ fn main() {
 
     println!("solution A = {solution_a}");
     println!("solution B = {solution_b}");
+}
+
+/// Specialized parsing method, improves performance over serde_json.
+#[allow(dead_code)]
+fn parse_list(line: &str) -> Vec<Item> {
+    if line.trim().is_empty() {
+        return Vec::new();
+    }
+
+    let csv = &line[1..line.len() - 1];
+    let mut items = Vec::new();
+    let mut part = String::new();
+    let mut level = 0;
+
+    for c in csv.chars() {
+        match c {
+            '[' => level += 1,
+            ']' => level -= 1,
+            ',' if level == 0 => {
+                match part.parse::<u64>() {
+                    Ok(num) => items.push(Item::Single(num)),
+                    Err(_) => items.push(Item::List(parse_list(&part))),
+                };
+
+                part.clear();
+                continue;
+            }
+            _ => {}
+        }
+
+        part.push(c);
+    }
+
+    match part.parse::<u64>() {
+        Ok(num) => items.push(Item::Single(num)),
+        Err(_) => items.push(Item::List(parse_list(&part))),
+    };
+
+    items
 }
