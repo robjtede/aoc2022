@@ -69,6 +69,9 @@ impl Ord for Item {
     }
 }
 
+/// Returns true if packet look like a divider packet with `n`.
+///
+/// E.g., `[[2]]`
 fn is_divider_packet(packet: &[Item], n: u64) -> bool {
     if packet.len() != 1 {
         return false;
@@ -91,30 +94,19 @@ fn main() {
 
     // problem A
 
-    let mut sum = 0;
-
-    for (i, (a, b)) in input
+    let sum = input
         .lines()
         .filter(|line| !line.is_empty())
+        .map(parse_list)
         .chunks(2)
         .into_iter()
         .map(|iter| iter.collect_tuple().unwrap())
         .enumerate()
-    {
-        let i = i + 1;
-
-        let ap = parse_list(a);
-        let bp = parse_list(b);
-
-        let ordered = match ap.cmp(&bp) {
-            cmp::Ordering::Less | cmp::Ordering::Equal => true,
-            cmp::Ordering::Greater => false,
-        };
-
-        // println!("pair {i} : {ordered:<5} : {a} <= {b}");
-
-        sum += i * ordered as usize;
-    }
+        .filter_map(|(i, (a, b))| match a.cmp(&b) {
+            cmp::Ordering::Less | cmp::Ordering::Equal => Some(i + 1),
+            cmp::Ordering::Greater => None,
+        })
+        .sum::<usize>();
 
     let solution_a = sum;
 
@@ -122,8 +114,8 @@ fn main() {
 
     let packets = input
         .lines()
-        .chain(["[[2]]", "[[6]]"].into_iter())
         .filter(|line| !line.is_empty())
+        .chain(["[[2]]", "[[6]]"].into_iter())
         // lines look like JSON arrays so parsing is simple
         .map(|line| serde_json::from_str::<Vec<Item>>(line).unwrap())
         .collect::<BTreeSet<_>>();
